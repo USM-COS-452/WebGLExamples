@@ -113,13 +113,13 @@ function drawSquare()
 }
 function render(canvas) {
     gl.clear( gl.COLOR_BUFFER_BIT );
-    gl.viewport( canvas.width/2, canvas.height/2, canvas.width/2, canvas.height/2 );
+    gl.viewport(0, canvas.height/2, canvas.width/2, canvas.height/2 );
     drawTriangle();
 
     gl.viewport(0, 0, canvas.width/2, canvas.height/2 );
     drawSquare();
 
-    gl.viewport(0, canvas.height/2, canvas.width/2, canvas.height/2 );
+    gl.viewport(canvas.width/2, 0, canvas.width/2, canvas.height );
     drawTriangle();
     drawSquare();
 
