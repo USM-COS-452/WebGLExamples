@@ -63,15 +63,15 @@ window.onload = function init()
     //event listeners for buttons
 
     document.getElementById( "xButton" ).onclick = function () {
-        transforms.push(xAxisRotation);
+        transforms.push(rotateX(2.0));
         render();
     };
     document.getElementById( "yButton" ).onclick = function () {
-        transforms.push(yAxisRotation);
+        transforms.push(rotateY(2.0));
         render();
     };
     document.getElementById( "zButton" ).onclick = function () {
-        transforms.push(zAxisRotation);
+        transforms.push(rotateZ(2.0));
         render();
     };
 
@@ -80,11 +80,11 @@ window.onload = function init()
         switch(event.keyCode)
         {
             case 37:
-                transforms.push(xNegTranslate);
+                transforms.push(translate(vec3(-0.1,0.0,0.0)));
                 render();
                 break;
             case 39:
-                transforms.push(xPosTranslate);
+                transforms.push(translate(vec3(0.1,0.0,0.0)));
                 render();
                 break;
         }
@@ -152,18 +152,9 @@ function render()
     // Using the MV functions ... briefly described on Pg 194
 
     modelMatrix = mat4();
-    for (var i = transforms.length -1 ;i >= 0;i--)
+    for (var i = transforms.length -1;i >=0 ;i--)
     {
-        if (transforms[i] == xAxisRotation)
-            modelMatrix = mult(modelMatrix, rotateX(2.0));
-        if (transforms[i] == yAxisRotation)
-            modelMatrix = mult(modelMatrix, rotateY(2.0));
-        if (transforms[i] == zAxisRotation)
-            modelMatrix = mult(modelMatrix, rotateZ(2.0));
-        if (transforms[i] == xNegTranslate)
-            modelMatrix = mult(modelMatrix, translate(vec3(-0.1,0.0,0.0)));
-        if (transforms[i] == xPosTranslate)
-            modelMatrix = mult(modelMatrix, translate(vec3(0.1,0.0,0.0)));
+            modelMatrix = mult(modelMatrix, transforms[i]);
     }
 
     gl.uniformMatrix4fv( uMatrixLoc, false, flatten(modelMatrix) );
