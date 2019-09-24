@@ -303,6 +303,20 @@ function mult( u, v )
 
         return result;
     }
+
+      if(u.matrix&& (u.length == v.length)) {
+        for(var i = 0; i<v.length; i++) {
+          var sum = 0.0;
+          for(var j=0; j<v.length; j++) {
+            sum += u[i][j]*v[j];
+          }
+          result.push(sum);
+        }
+      return result;
+      }
+
+
+
     else {
         if ( u.length != v.length ) {
             throw "mult(): vectors are not the same dimension";
@@ -369,25 +383,25 @@ function rotateX(theta) {
   var c = Math.cos( radians(theta) );
   var s = Math.sin( radians(theta) );
   var rx = mat4( 1.0,  0.0,  0.0, 0.0,
-      0.0,  c,  s, 0.0,
-      0.0, -s,  c, 0.0,
+      0.0,  c,  -s, 0.0,
+      0.0, s,  c, 0.0,
       0.0,  0.0,  0.0, 1.0 );
   return rx;
 }
 function rotateY(theta) {
   var c = Math.cos( radians(theta) );
   var s = Math.sin( radians(theta) );
-  var ry = mat4( c, 0.0, -s, 0.0,
+  var ry = mat4( c, 0.0, s, 0.0,
       0.0, 1.0,  0.0, 0.0,
-      s, 0.0,  c, 0.0,
+      -s, 0.0,  c, 0.0,
       0.0, 0.0,  0.0, 1.0 );
   return ry;
 }
 function rotateZ(theta) {
   var c = Math.cos( radians(theta) );
   var s = Math.sin( radians(theta) );
-  var rz = mat4( c, s, 0.0, 0.0,
-      -s,  c, 0.0, 0.0,
+  var rz = mat4( c, -s, 0.0, 0.0,
+      s,  c, 0.0, 0.0,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0 );
   return rz;
