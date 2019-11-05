@@ -1,0 +1,213 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title> Sun </title>
+    <!--This is important to get a correct canvas size on mobile-->
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <style>
+            body{
+                margin:0;
+                overflow:hidden;
+            }
+
+            /*
+              Next 2 paragraphs are a good practice. 
+              In IE/Edge you have to provide the cursor images.
+            */
+            canvas{
+                cursor:grab;
+                cursor:-webkit-grab;
+                cursor:-moz-grab;
+            }
+            canvas:active{
+                cursor:grabbing;
+                cursor:-webkit-grabbing;
+                cursor:-moz-grabbing;
+            }
+        </style>
+  </head>
+  <body>
+    <script src="../threejs/three.js-master/build/three.js"></script>
+    <script src="../threejs/three.js-master/examples/js/controls/OrbitControls.js"></script>
+    <div id="container"></div>
+    <canvas id="c" height: 500px; width: 500px;></canvas>
+    
+    <script>
+
+function main() {
+  const canvas = document.querySelector('#c');
+  const renderer = new THREE.WebGLRenderer({canvas});
+  renderer.autoClearColor = false;
+
+  const camera = new THREE.OrthographicCamera(
+    -1, // left
+     1, // right
+     1, // top
+    -1, // bottom
+    -1, // near,
+     1, // far
+  );
+  const scene = new THREE.Scene();
+  const plane = new THREE.PlaneBufferGeometry(2, 2);
+
+  const fragmentShader2 = `
+
+uniform vec3 iResolution;
+uniform float iTime;
+
+float noise(vec3 p) //Thx to Las^Mercury
+{
+	vec3 i = floor(p);
+	vec4 a = dot(i, vec3(1., 57., 21.)) + vec4(0., 57., 21., 78.);
+	vec3 f = cos((p-i)*acos(-1.))*(-.5)+.5;
+	a = mix(sin(cos(a)*a),sin(cos(1.+a)*(1.+a)), f.x);
+	a.xy = mix(a.xz, a.yw, f.y);
+	return mix(a.x, a.y, f.z);
+}
+
+float sphere(vec3 p, vec4 spr)
+{
+	return length(spr.xyz-p) - spr.w;
+}
+
+float flame(vec3 p)
+{
+	float d = sphere(p*vec3(1.,.5,1.), vec4(.0,-1.,.0,1.));
+	return d + (noise(p+vec3(.0,iTime*2.,.0)) + noise(p*3.)*.5)*.25*(p.y) ;
+}
+
+float scene(vec3 p)
+{
+	return min(100.-length(p) , abs(flame(p)) );
+}
+
+vec4 raymarch(vec3 org, vec3 dir)
+{
+	float d = 0.0, glow = 0.0, eps = 0.02;
+	vec3  p = org;
+	bool glowed = false;
+	
+	for(int i=0; i<64; i++)
+	{
+		d = scene(p) + eps;
+		p += d * dir;
+		if( d>eps )
+		{
+			if(flame(p) < .0)
+				glowed=true;
+			if(glowed)
+       			glow = float(i)/64.;
+		}
+	}
+	return vec4(p,glow);
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+	vec2 v = -1.0 + 2.0 * fragCoord.xy / iResolution.xy;
+	v.x *= iResolution.x/iResolution.y;
+	
+	vec3 org = vec3(0., -2., 4.);
+	vec3 dir = normalize(vec3(v.x*1.6, -v.y, -1.5));
+	
+	vec4 p = raymarch(org, dir);
+	float glow = p.w;
+	
+	vec4 col = mix(vec4(1.,.5,.1,1.), vec4(0.1,.5,1.,1.), p.y*.02+.4);
+	
+	fragColor = mix(vec4(0.), col, pow(glow*2.,4.));
+	//fragColor = mix(vec4(1.), mix(vec4(1.,.5,.1,1.),vec4(0.1,.5,1.,1.),p.y*.02+.4), pow(glow*2.,4.));
+
+}
+void main() {
+    mainImage(gl_FragColor, gl_FragCoord.xy);
+  }
+  
+`;
+
+  const fragmentShader = `
+  #include <common>
+
+  uniform vec3 iResolution;
+  uniform float iTime;
+  uniform sampler2D iChannel0;
+
+  // By Daedelus: https://www.shadertoy.com/user/Daedelus
+  // license: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+  #define TIMESCALE 0.25 
+  #define TILES 8
+  #define COLOR 0.7, 1.6, 2.8
+
+  void mainImage( out vec4 fragColor, in vec2 fragCoord )
+  {
+    vec2 uv = fragCoord.xy / iResolution.xy;
+    uv.x *= iResolution.x / iResolution.y;
+    
+    vec4 noise = texture2D(iChannel0, floor(uv * float(TILES)) / float(TILES));
+    float p = 1.0 - mod(noise.r + noise.g + noise.b + iTime * float(TIMESCALE), 1.0);
+    p = min(max(p * 3.0 - 1.8, 0.1), 2.0);
+    
+    vec2 r = mod(uv * float(TILES), 1.0);
+    r = vec2(pow(r.x - 0.5, 2.0), pow(r.y - 0.5, 2.0));
+    p *= 1.0 - pow(min(1.0, 12.0 * dot(r, r)), 2.0);
+    
+    fragColor = vec4(COLOR, 1.0) * p;
+  }
+
+  void main() {
+    mainImage(gl_FragColor, gl_FragCoord.xy);
+  }
+  `;
+  const loader = new THREE.TextureLoader();
+  const texture = loader.load('https://threejsfundamentals.org/threejs/resources/images/bayer.png');
+  texture.minFilter = THREE.NearestFilter;
+  texture.magFilter = THREE.NearestFilter;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  const uniforms = {
+    iTime: { value: 0 },
+    iResolution:  { value: new THREE.Vector3() },
+    iChannel0: { value: texture },
+  };
+  const material = new THREE.ShaderMaterial({
+    uniforms,
+    fragmentShader : fragmentShader2
+  });
+  scene.add(new THREE.Mesh(plane, material));
+
+  function resizeRendererToDisplaySize(renderer) {
+    const canvas = renderer.domElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    const needResize = canvas.width !== width || canvas.height !== height;
+    if (needResize) {
+      renderer.setSize(width, height, false);
+    }
+    return needResize;
+  }
+
+  function render(time) {
+    time *= 0.001;  // convert to seconds
+
+    resizeRendererToDisplaySize(renderer);
+
+    const canvas = renderer.domElement;
+    uniforms.iResolution.value.set(canvas.width, canvas.height, 1);
+    uniforms.iTime.value = time;
+
+    renderer.render(scene, camera);
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+}
+
+main();
+  
+    </script>
+            
+  </body>
+</html>
