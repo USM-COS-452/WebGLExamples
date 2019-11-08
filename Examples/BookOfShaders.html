@@ -29,8 +29,8 @@
         </style>
   </head>
   <body>
-    <script src="../threejs/three.js-master/build/three.js"></script>
-    <script src="../threejs/three.js-master/examples/js/controls/OrbitControls.js"></script>
+    <script src="js/three.js"></script>
+    <script src="js/controls/OrbitControls.js"></script>
     <script id="vertexShader" type="x-shader/x-vertex">
          varying vec2 vUv;
          void main() {
@@ -65,7 +65,7 @@
           vec3 color = vec3(.0);
 
           // Scale
-          st *= 30.;
+          st *= 50.;
 
           // Tile the space
           vec2 i_st = floor(st);
@@ -172,7 +172,7 @@
                 fragmentShader: document.getElementById( 'fragmentShader2' ).textContent
             } );
             
-            obj = new THREE.Mesh( geometry2, material2 );
+            obj = new THREE.Mesh( geometry2, material3 );
             obj.material.side = THREE.DoubleSide;
             scene.add( obj );
 

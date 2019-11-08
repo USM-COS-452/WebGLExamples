@@ -152,6 +152,8 @@ function render()
     // Using the MV functions ... briefly described on Pg 194
 
     modelMatrix = mat4();
+
+    // WebGL : later transforms are applied before earlier ones (like a stack)
     for (var i = transforms.length -1;i >=0 ;i--)
     {
             modelMatrix = mult(modelMatrix, transforms[i]);
